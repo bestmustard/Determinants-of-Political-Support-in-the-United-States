@@ -1,0 +1,431 @@
+LLM: ChatGPT-4.
+Date: 16 Mar 2024
+
+Here is a data download script:
+#### Preamble ####
+# Purpose: Downloads and saves the 2020 CCES data recorded by Schaffner, Brian et.al 
+# Author: Victor Ma
+# Date: 15 Mar 2024
+# Contact: victo.ma@mail.utoronto.ca
+# License: MIT
+
+
+
+#### Workspace setup ####
+library(tidyverse)
+library(dplyr)
+library(dataverse)
+#### Download data ####
+ces2020 <-
+  get_dataframe_by_name(
+    filename = "CES20_Common_OUTPUT_vv.csv",
+    dataset = "10.7910/DVN/E9N6PH",
+    server = "dataverse.harvard.edu",
+    .f = read_csv
+  ) |>
+  select(votereg, CC20_410, gender, educ, birthyr) # I would have included this only in data cleaning but the 
+# raw_data.csv is too large to upload to git without doing this
+
+#### Save data ####
+write_csv(ces2020, "data/raw_data/raw_data.csv")
+
+
+Here is a data cleaning script:
+#### Preamble ####
+# Purpose: Cleans the raw 2020 CCES data recorded by Schaffner, Brian et.al 
+# Author: Victor Ma
+# Date: 15 Mar 2024
+# Contact: victo.ma@mail.utoronto.ca
+# License: MIT
+
+#### Workspace setup ####
+library(tidyverse)
+
+#### Clean data ####
+raw_data <-
+  read_csv(
+    "data/raw_data/",
+    col_types =
+      cols(
+        "votereg" = col_integer(),
+        "CC20_410" = col_integer(),
+        "gender" = col_integer(),
+        "educ" = col_integer(),
+        "birthyr" = col_integer()
+      )
+  )
+
+cleaned_data <-
+  raw_data |>
+  filter(votereg == 1,
+         CC20_410 %in% c(1, 2)) |>
+  mutate(
+    voted_for = if_else(CC20_410 == 1, "Biden", "Trump"),
+    voted_for = as_factor(voted_for),
+    gender = if_else(gender == 1, "Male", "Female"),
+    age = case_when(
+      birthyr <= 1955  ~ "65+",
+      birthyr > 1955 & birthyr <= 1975  ~ "45-64",
+      birthyr > 1975 & birthyr <= 1990~ "30-44",
+      birthyr > 1990 & birthyr <= 2002 ~ "18-29",
+    ),
+    age = factor(
+      age,
+      levels = c(
+        "65+",
+        "45-64",
+        "30-44",
+        "18-29"
+      )
+    ),
+    education = case_when(
+      educ == 1 ~ "No HS",
+      educ == 2 ~ "High school graduate",
+      educ == 3 ~ "Some college",
+      educ == 4 ~ "2-year",
+      educ == 5 ~ "4-year",
+      educ == 6 ~ "Post-grad"
+    ),
+    education = factor(
+      education,
+      levels = c(
+        "No HS",
+        "High school graduate",
+        "Some college",
+        "2-year",
+        "4-year",
+        "Post-grad"
+      )
+    )
+  ) |>
+  select(voted_for, age, gender, education)
+
+
+#### Save data ####
+write_csv(cleaned_data, "data/analysis_data/analysis_data.csv")
+
+Rather than doing select() on a few columns, rewrite it so that raw_data is a parquet and the data cleaning script saves both data/analysis_data/analysis_data.csv AND a parquet file called analysis_data
+
+GPT
+To adjust your scripts so that the data is initially saved as a parquet file and then the data cleaning script saves both a CSV and a parquet file for the analysis data, you need to make modifications to both the download and the cleaning script. Parquet is a columnar storage file format optimized for big data processing and storage efficiency.
+
+Modified Download Script
+This script involves saving the initially downloaded data as a parquet file. The R library arrow is excellent for working with parquet files, so it should be added to the workspace setup.
+
+r
+Copy code
+#### Preamble ####
+# Purpose: Downloads and saves the 2020 CCES data recorded by Schaffner, Brian et.al 
+# Author: Victor Ma
+# Date: 15 Mar 2024
+# Contact: victo.ma@mail.utoronto.ca
+# License: MIT
+
+#### Workspace setup ####
+library(tidyverse)
+library(dataverse)
+library(arrow) # Add this for parquet file support
+
+#### Download data ####
+ces2020 <-
+  get_dataframe_by_name(
+    filename = "CES20_Common_OUTPUT_vv.csv",
+    dataset = "10.7910/DVN/E9N6PH",
+    server = "dataverse.harvard.edu",
+    .f = read_csv
+  ) |>
+  select(votereg, CC20_410, gender, educ, birthyr)
+
+#### Save data ####
+write_parquet(ces2020, "data/raw_data/raw_data.parquet")
+Modified Data Cleaning Script
+For the data cleaning script, you need to adjust the script to read from the parquet file, then save the cleaned data in both CSV and parquet formats.
+
+r
+Copy code
+#### Preamble ####
+# Purpose: Cleans the raw 2020 CCES data recorded by Schaffner, Brian et.al 
+# Author: Victor Ma
+# Date: 15 Mar 2024
+# Contact: victo.ma@mail.utoronto.ca
+# License: MIT
+
+#### Workspace setup ####
+library(tidyverse)
+library(arrow) # Ensure arrow is used for reading parquet
+
+#### Clean data ####
+raw_data <-
+  read_parquet("data/raw_data/raw_data.parquet")
+
+cleaned_data <-
+  raw_data |>
+  filter(votereg == 1, CC20_410 %in% c(1, 2)) |>
+  mutate(
+    voted_for = if_else(CC20_410 == 1, "Biden", "Trump"),
+    voted_for = as_factor(voted_for),
+    gender = if_else(gender == 1, "Male", "Female"),
+    age = case_when(
+      birthyr <= 1955  ~ "65+",
+      birthyr > 1955 & birthyr <= 1975  ~ "45-64",
+      birthyr > 1975 & birthyr <= 1990 ~ "30-44",
+      birthyr > 1990 & birthyr <= 2002 ~ "18-29",
+    ),
+    age = factor(
+      age,
+      levels = c("65+", "45-64", "30-44", "18-29")
+    ),
+    education = case_when(
+      educ == 1 ~ "No HS",
+      educ == 2 ~ "High school graduate",
+      educ == 3 ~ "Some college",
+      educ == 4 ~ "2-year",
+      educ == 5 ~ "4-year",
+      educ == 6 ~ "Post-grad"
+    ),
+    education = factor(
+      education,
+      levels = c("No HS", "High school graduate", "Some college", "2-year", "4-year", "Post-grad")
+    )
+  ) |>
+  select(voted_for, age, gender, education)
+
+#### Save data ####
+write_csv(cleaned_data, "data/analysis_data/analysis_data.csv")
+write_parquet(cleaned_data, "data/analysis_data/analysis_data.parquet")
+These modifications ensure that your data is initially saved as a parquet file, which is more efficient for large datasets, and then both the CSV and parquet formats are provided for the analysis data, offering flexibility in data handling for further analysis or distribution.
+
+
+
+How do I show each of the following in an aesthetic table of graph:
+```{r}
+# Assuming 'political_preferences' is your logistic regression model object
+
+# Load necessary libraries
+library(broom)
+library(performance)
+
+# Summary of the model to check coefficients' significance
+summary(political_preferences)
+
+# Model Fit Statistics: AIC and BIC
+AIC(political_preferences)
+BIC(political_preferences)
+
+# Predicted probabilities
+predicted_probs <- predict(political_preferences, type = "response")
+```
+This does not work:
+# Create a data frame for AIC and BIC
+aic_bic_df <- data.frame(
+  Statistic = c("AIC", "BIC"),
+  Value = c(aic_value, bic_value)
+)
+GPT
+In R, to create a dataframe that contains AIC and BIC and to show them in an aesthetic table, you might use the kable function from the knitr package for table creation, along with kableExtra for styling. First, let's correct your code snippet to make sure it creates a dataframe properly, and then we'll display it with kable.
+
+Here is how you can correct your R code and display the results:
+
+r
+Copy code
+# Load necessary libraries
+library(broom)
+library(knitr)
+library(kableExtra)
+
+# Assuming 'political_preferences' is your logistic regression model object
+
+# Calculate AIC and BIC values
+aic_value <- AIC(political_preferences)
+bic_value <- BIC(political_preferences)
+
+# Create a data frame for AIC and BIC
+aic_bic_df <- data.frame(
+  Statistic = c("AIC", "BIC"),
+  Value = c(aic_value, bic_value)
+)
+
+# Create an aesthetic table using kable from the knitr package and kableExtra for styling
+kable(aic_bic_df, format = "html", col.names = c("Statistic", "Value")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F) %>%
+  add_header_above(c("Model Fit Statistics" = 2))
+The resulting table will be displayed in a formatted and styled manner suitable for reports or publications. If you are rendering your document in R Markdown and want to display the table in a non-HTML format (like a PDF), you would change the format parameter to "latex".
+
+For the predicted probabilities, if you want to visualize them in a histogram, you can use ggplot2 to create an aesthetic graph:
+
+r
+Copy code
+# Load ggplot2 for data visualization
+library(ggplot2)
+
+# Convert the predicted probabilities to a dataframe for plotting
+predicted_probs_df <- data.frame(PredictedProbabilities = predicted_probs)
+
+# Create a histogram of predicted probabilities
+ggplot(predicted_probs_df, aes(x = PredictedProbabilities)) +
+  geom_histogram(binwidth = 0.1, fill = "blue", color = "black") +
+  labs(title = "Histogram of Predicted Probabilities",
+       x = "Predicted Probability of Supporting Biden",
+       y = "Count") +
+  theme_minimal()
+This ggplot2 code will produce a clean and aesthetic histogram that showcases the distribution of the predicted probabilities of individuals supporting Biden based on your logistic regression model. Adjust the binwidth as necessary to suit your data's distribution.
+
+User
+Can you make this a proportion graph:
+```{r}
+# Example constant values for the other factors
+constant_education <- "2-year" # Choose a representative value
+constant_gender <- "Male" # Choose a representative value
+
+# Create a data frame for age predictions
+age_data <- data.frame(age = c("18-29", "30-44", "45-64", "65+"),
+                       education = constant_education,
+                       gender = constant_gender)
+
+# Predict probabilities for each age group
+age_data$predicted_prob <- predict(political_preferences, newdata = age_data, type = "response")
+library(ggplot2)
+
+# Assuming age_data contains the predicted probabilities for age groups
+ggplot(age_data, aes(x = age, y = predicted_prob, fill = age)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Predicted Probability of Support by Age Group",
+       x = "Age Group", y = "Predicted Probability") +
+  theme_minimal() +
+  scale_fill_brewer()
+
+```
+Then layer it on top of the age graph from earlier? So that two proportions are shown at each age category
+
+Here is the actual data one:
+# Relationship between Age and Political Preferences
+ggplot(ces_data, aes(x = age, fill = voted_for)) +
+  geom_bar(position = "fill") +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  labs(title = "Age and Political Preferences", x = "Age Group", y = "Proportion")
+```
+Each bar should go from 0-1. The first line in the bar should be the probability from 0 to 1 based on the data that there is a vote for biden, then the second line should be the probability from 0 to 1 based on the linear model that there is a vote for biden
+GPT
+To achieve the described visualization where you have two sets of proportions displayed for each age category, one from the actual data and one from the model predictions, you can use geom_bar for the actual data and geom_point or geom_line for the predicted data on top of the same graph. Here’s how you can combine them using ggplot2:
+
+r
+Copy code
+# Load necessary library
+library(ggplot2)
+
+# Actual proportions from the data
+ces_data_grouped <- ces_data %>%
+  group_by(age) %>%
+  summarize(Proportion_for_Biden = mean(voted_for == "Biden", na.rm = TRUE))
+
+# Assuming 'political_preferences' is your logistic regression model object and
+# 'age_data' contains the predicted probabilities with 'age' as a factor
+# Example R code for the predicted model
+age_data$age <- factor(age_data$age, levels = c("18-29", "30-44", "45-64", "65+"))
+
+# Create a combined plot
+ggplot() +
+  geom_bar(data = ces_data_grouped, aes(x = age, y = Proportion_for_Biden, fill = age), 
+           stat = "identity", position = "dodge", alpha = 0.5) +
+  geom_point(data = age_data, aes(x = age, y = predicted_prob, color = age), 
+             position = position_dodge(width = 0.9), size = 3) +
+  scale_fill_brewer(palette = "Set1") + 
+  scale_color_brewer(palette = "Set1") + 
+  labs(title = "Actual vs. Predicted Support for Biden by Age Group",
+       x = "Age Group", y = "Proportion") +
+  theme_minimal() +
+  theme(legend.position = "none") # Remove legend to avoid confusion
+
+# Ensure the order of the factors is the same in both datasets
+ces_data$age <- factor(ces_data$age, levels = c("18-29", "30-44", "45-64", "65+"))
+In this graph:
+
+geom_bar is used to plot the actual proportion of respondents who support Biden by age from the dataset (ces_data_grouped).
+geom_point is used to plot the predicted probabilities from the logistic regression model (age_data).
+Both sets of proportions are plotted against each age category, and the position_dodge function is used to align them side by side.
+alpha is set to a value lower than 1 in geom_bar to make the bars semi-transparent, which helps to distinguish between the actual data and the model predictions.
+This visualization will allow you to compare the actual proportion of support for Biden by age group to the proportion predicted by your logistic regression model. The resulting plot should give a clear visual representation of how well the model's predictions align with the observed data.
+
+User
+Do the same for Gender and Education
+GPT
+To visualize the actual vs. predicted support for Biden by gender and education, you can follow a similar approach. This requires preparing your data to include both the actual proportions from your dataset and the predicted probabilities from your logistic regression model.
+
+First, ensure you have the predictions for gender and education from your model:
+
+r
+Copy code
+# Example constant values for the other factors (choose representative values for each)
+constant_age <- "30-44" # Assuming this is a middle category for age
+
+# Create a data frame for gender predictions
+gender_data <- data.frame(
+  gender = c("Male", "Female"),
+  education = constant_education, # Assuming you have a constant value set for education
+  age = constant_age
+)
+
+# Predict probabilities for each gender category
+gender_data$predicted_prob <- predict(political_preferences, newdata = gender_data, type = "response")
+
+# Create a data frame for education predictions
+education_data <- data.frame(
+  education = c("No HS", "High school graduate", "Some college", "2-year", "4-year", "Post-grad"),
+  gender = constant_gender, # Assuming you have a constant value set for gender
+  age = constant_age
+)
+
+# Predict probabilities for each education category
+education_data$predicted_prob <- predict(political_preferences, newdata = education_data, type = "response")
+Next, aggregate your actual data to get proportions by gender and by education:
+
+r
+Copy code
+# Actual proportions by gender
+ces_data_gender_grouped <- ces_data %>%
+  group_by(gender) %>%
+  summarize(Proportion_for_Biden = mean(voted_for == "Biden", na.rm = TRUE))
+
+# Actual proportions by education
+ces_data_education_grouped <- ces_data %>%
+  group_by(education) %>%
+  summarize(Proportion_for_Biden = mean(voted_for == "Biden", na.rm = TRUE))
+Finally, plot the actual vs. predicted proportions:
+
+r
+Copy code
+# Plot for Gender
+ggplot() +
+  geom_bar(data = ces_data_gender_grouped, aes(x = gender, y = Proportion_for_Biden, fill = gender), 
+           stat = "identity", position = "dodge", alpha = 0.5) +
+  geom_point(data = gender_data, aes(x = gender, y = predicted_prob, color = gender), 
+             position = position_dodge(width = 0.9), size = 3) +
+  scale_fill_brewer(palette = "Set2") + 
+  scale_color_brewer(palette = "Set2") + 
+  labs(title = "Actual vs. Predicted Support for Biden by Gender",
+       x = "Gender", y = "Proportion") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Plot for Education
+ggplot() +
+  geom_bar(data = ces_data_education_grouped, aes(x = education, y = Proportion_for_Biden, fill = education), 
+           stat = "identity", position = "dodge", alpha = 0.5) +
+  geom_point(data = education_data, aes(x = education, y = predicted_prob, color = education), 
+             position = position_dodge(width = 0.9), size = 3) +
+  scale_fill_brewer(palette = "Set3") + 
+  scale_color_brewer(palette = "Set3") + 
+  labs(title = "Actual vs. Predicted Support for Biden by Education",
+       x = "Education Level", y = "Proportion") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Adjust text angle for readability
+In these plots:
+
+For gender, geom_bar and geom_point represent the actual proportions and model predictions, respectively, allowing a direct comparison of observed vs. predicted support for Biden.
+For education, a similar approach is taken, with the x-axis now representing different levels of educational attainment.
+Adjust palette in scale_fill_brewer and scale_color_brewer as needed to match your data visualization preferences.
+
+
+
