@@ -3,15 +3,14 @@
 # Author: Victor Ma
 # Date: 15 Mar 2024
 # Contact: victo.ma@mail.utoronto.ca
-# License: MIT
 
 #### Workspace setup ####
 library(tidyverse)
-library(arrow) # Ensure arrow is used for reading parquet
+library(arrow) # Arrow is used for writing parquet
 
 #### Clean data ####
 raw_data <-
-  read_parquet("data/raw_data/raw_data.parquet")
+  read_csv("data/raw_data/raw_data.csv")
 
 cleaned_data <-
   raw_data |>

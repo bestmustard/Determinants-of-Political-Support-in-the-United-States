@@ -15,6 +15,9 @@ The repo is structured as:
 -   `paper` contains the files used to generate the paper, including the Quarto document and reference bibliography file, as well as the PDF of the paper. 
 -   `scripts` contains the R scripts used to simulate, download and clean data.
 
+## Reproducibility
+
+Scripts are included in the /scripts folder to download the data from dataverse, clean it, and upload it into the /data folder. The paper markdown file uses the analysis_data.csv file directly from this folder. 
 
 ## Statement on LLM usage
 
