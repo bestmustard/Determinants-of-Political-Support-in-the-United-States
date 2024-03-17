@@ -2,14 +2,13 @@
 
 ## Overview
 
-This repo is an analysis on how various demographics affect voter data.
-
+This repo is an analysis on how various demographics determine political affiliation specifically based on the 2020 US presidential election. Data was obtained from the 2020 Cooperative Election Study (CES), cleaned and analysed in order to fit a logistic regression model.
 
 ## File Structure
 
 The repo is structured as:
 
--   `data/raw_data` contains the raw data as obtained from X.
+-   `data/raw_data` contains the raw data as obtained from CCES 2020.
 -   `data/analysis_data` contains the cleaned dataset that was constructed.
 -   `model` contains fitted models. 
 -   `other` contains relevant literature, details about LLM chat interactions, and sketches.
@@ -19,4 +18,4 @@ The repo is structured as:
 
 ## Statement on LLM usage
 
-Aspects of the code were written with the help of the auto-complete tool, CHATGPT4. The abstract and introduction were written with the help of ChatHorse and the entire chat history is available in inputs/llms/usage.txt.
+Aspects of the code were written with the help of the auto-complete tool, CHATGPT4. The test file, weaknesses section, and various ggplot graphs were written with the help of CHATGPT4.
