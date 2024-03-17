@@ -781,6 +781,106 @@ GPT
 Talked to call.gptinf.com
 Although valuable, this study provides an intriguing analysis of how demographic influences affect political preferences; however, there are additional limitations to consider. Firstly, the study's analysis model, which used logistic regression, may have simplified the understanding of complex dynamics and could have overlooked some interactions between demographic variables that would provide a better understanding of voter behavior. Future research could utilize more advanced tools, such as multilevel or mixed-effects models, to more accurately capture the interplay of these demographic variables.
 
+
+User
+WRITE ME TESTS IN R FOR THIS CODE:
+#### Preamble ####
+# Purpose: Simulates... [...UPDATE THIS...]
+# Author: Rohan Alexander [...UPDATE THIS...]
+# Date: 11 February 2023 [...UPDATE THIS...]
+# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# License: MIT
+# Pre-requisites: [...UPDATE THIS...]
+# In this simulation I use code from Alexander, Rohan 
+# Code can be found at https://tellingstorieswithdata.com/13-ijaglm.html#political-support-in-the-united-states
+
+
+#### Workspace setup ####
+library(tidyverse)
+
+#### Simulate data ####
+set.seed(853)
+
+num_obs <- 1000 
+
+us_political_preferences <- tibble( # simulate an example election
+  education = sample(0:4, size = num_obs, replace = TRUE),
+  gender = sample(0:1, size = num_obs, replace = TRUE),
+  support_prob = ((education + gender) / 5),
+) |>
+  mutate(
+    supports_biden = if_else(runif(n = num_obs) < support_prob, "yes", "no"),
+    education = case_when(
+      education == 0 ~ "< High school",
+      education == 1 ~ "High school",
+      education == 2 ~ "Some college",
+      education == 3 ~ "College",
+      education == 4 ~ "Post-grad"
+    ),
+    gender = if_else(gender == 0, "Male", "Female")
+  ) |>
+  select(-support_prob, supports_biden, gender, education)
+
+GPT
+To test the simulation code you've provided, we need to focus on ensuring that the simulated data behaves as expected according to the logic defined in your simulation. Specifically, we want to test:
+
+The distribution of education and gender categories.
+The proportion of simulated individuals who support Biden (supports_biden) based on the probability (support_prob) logic.
+General integrity checks, such as ensuring no unexpected NA values and the sizes of each categorical variable.
+Here are some R tests that you could implement:
+
+Test for Distribution of Education and Gender
+r
+Copy code
+# Ensure that education levels and gender have been assigned correctly
+test_education_levels <- table(us_political_preferences$education)
+test_gender_distribution <- table(us_political_preferences$gender)
+
+# Printing to check distribution - you may replace this with an assertion for automated testing
+print(test_education_levels)
+print(test_gender_distribution)
+Test for Proportion of Biden Supporters
+Given the simulation's logic, we expect a certain relationship between education, gender, and supporting Biden. To test this, we can:
+
+Calculate the expected proportion of Biden supporters based on education and gender.
+Compare this to the actual proportion in the simulated data.
+r
+Copy code
+# Calculating expected vs actual proportion of Biden supporters
+biden_supporters <- us_political_preferences %>%
+  group_by(education, gender) %>%
+  summarize(
+    num_supporters = sum(supports_biden == "yes"),
+    total = n(),
+    prop_supporters = num_supporters / total
+  )
+
+# Inspecting the proportion of supporters - replace with more rigorous statistical testing as needed
+print(biden_supporters)
+Integrity Checks
+Perform some basic integrity checks to ensure there are no unexpected NA values and that the simulated dataset has the expected structure:
+
+r
+Copy code
+# Check for NA values
+any_na <- anyNA(us_political_preferences)
+print(paste("Any NA values in the data:", any_na))
+
+# Check for unexpected categories in 'education' and 'gender'
+education_categories <- unique(us_political_preferences$education)
+gender_categories <- unique(us_political_preferences$gender)
+
+print("Education categories:")
+print(education_categories)
+
+print("Gender categories:")
+print(gender_categories)
+
+# Assertion example for automated testing
+# This is a simple check to ensure the 'education' variable has exactly 5 unique categories as defined
+stopifnot(length(education_categories) == 5)
+These tests provide a starting point for validating your simulated data. Depending on the specifics of your simulation and the needs of your analysis, you might develop more sophisticated tests or statistical checks to ensure the reliability and integrity of your simulated dataset.
+
 Secondly, while detailed, the study's dataset may not fully account for the subtleties in voter behavior across all demographics. For example, the impact of regional urban-rural political contexts on voting patterns could have nuances beyond the current analysis's reach. Incorporating geographic and socioeconomic variables could further improve and strengthen the model, offering deeper insight into the electoral impact of demographic factors.
 
 Lastly, the study's focus on the 2020 election, though timely, limits its ability to capture longitudinal trends in voter behavior. A comparative analysis developed over multiple election cycles might reveal changes in demographic influences on political preferences over time, providing a richer context for interpreting the 2020 election results. In summary, this paper not only sheds light on the demographic determinants of voter preferences in a pivotal election year but also encourages reflection on the broader societal shifts these patterns indicate. As America faces deep social and political challenges, understanding the demographic underpinnings of political allegiance becomes increasingly important. Further research, building on the insights provided in this paper and addressing the weaknesses outlined, has the potential to offer even better explanations of the complex tapestry of American electoral politics.
