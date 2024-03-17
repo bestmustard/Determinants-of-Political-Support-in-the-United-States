@@ -10,20 +10,20 @@
 #### Workspace setup ####
 library(tidyverse)
 
-
-
 # Ensure that education levels and gender have been assigned correctly
 test_education_levels <- table(us_political_preferences$education)
 test_gender_distribution <- table(us_political_preferences$gender)
+test_age_levels <- table(us_political_preferences$age)
 
 # Printing to check distribution - you may replace this with an assertion for automated testing
 print(test_education_levels)
 print(test_gender_distribution)
+print(test_age_levels)
 
 
 # Calculating expected vs actual proportion of Biden supporters
 biden_supporters <- us_political_preferences %>%
-  group_by(education, gender) %>%
+  group_by(education, gender, age) %>%
   summarize(
     num_supporters = sum(supports_biden == "yes"),
     total = n(),
@@ -40,6 +40,7 @@ print(paste("Any NA values in the data:", any_na))
 # Check for unexpected categories in 'education' and 'gender'
 education_categories <- unique(us_political_preferences$education)
 gender_categories <- unique(us_political_preferences$gender)
+age_categories <- unique(us_political_preferences$age)
 
 print("Education categories:")
 print(education_categories)
@@ -47,6 +48,11 @@ print(education_categories)
 print("Gender categories:")
 print(gender_categories)
 
+
+print("Age categories:")
+print(age_categories)
+
 # Assertion example for automated testing
 # This is a simple check to ensure the 'education' variable has exactly 5 unique categories as defined
 stopifnot(length(education_categories) == 5)
+stopifnot(length(age_categories) == 4)

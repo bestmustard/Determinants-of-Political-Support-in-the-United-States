@@ -17,7 +17,7 @@ The repo is structured as:
 
 ## Reproducibility
 
-Scripts are included in the /scripts folder to download the data from dataverse, clean it, and upload it into the /data folder. The paper markdown file uses the analysis_data.csv file directly from this folder. 
+Scripts are included in the /scripts folder to download the data from dataverse, clean it, and upload it into the /data folder. The paper markdown file uses the analysis_data.csv file directly from the /data/analysis_data folder. 
 
 ## Statement on LLM usage
 

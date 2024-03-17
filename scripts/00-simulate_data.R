@@ -4,7 +4,6 @@
 # Date: 16 March 2024
 # Contact: victo.ma@mail.utoronto.ca
 # In this simulation I use code from Alexander, Rohan 
-# Code can be found at https://tellingstorieswithdata.com/13-ijaglm.html#political-support-in-the-united-states
 
 
 #### Workspace setup ####

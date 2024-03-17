@@ -44,6 +44,6 @@ cleaned_data <-
   ) |>
   select(voted_for, age, gender, education)
 
-#### Save data ####
+#### Save the data ####
 write_csv(cleaned_data, "data/analysis_data/analysis_data.csv")
 write_parquet(cleaned_data, "data/analysis_data/analysis_data.parquet")

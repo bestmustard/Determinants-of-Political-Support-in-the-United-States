@@ -10,7 +10,6 @@
 #install.packages("arrow")
 library(tidyverse)
 library(dataverse)
-library(arrow) # Add this for parquet file support
 library(dplyr)
 
 #### Download data ####
@@ -23,4 +22,4 @@ ces2020 <-
   ) 
 
 #### Save data ####
-write_parquet(ces2020, "data/raw_data/raw_data.parquet")
+write_csv(ces2020, "data/raw_data/raw_data.csv")
